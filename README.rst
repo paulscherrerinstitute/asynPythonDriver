@@ -6,8 +6,7 @@ By its essence, the parameter value access is delegated to the Python module, pr
 
 Configure
 ---------
-
-::
+IOC shell command to configure a python port::
 
     /*
      * portName: The name of the asyn port driver to be created.
@@ -16,8 +15,9 @@ Configure
      */
     asynPythonConfigure(const char *portName, const char *pythonModule, int numParams)
 
-Examplies
----------
+
+Examples
+--------
 
 Simulated Oscilloscope
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -25,4 +25,12 @@ Simulated Oscilloscope
 The driver is from *testAsynPortDriver* has been ported. The EPICS database is copied with no change. 
 Only that the C++ file testAsynPortDriver.cpp has been written in Python scope.py. 
 
+::
+    
+    cd iocBoot/iocscope
+    ./start_epics
+
+Launch MEDM::
+    
+    medm -x -macro P=MTEST:,R=SCOPE: testAsynPortDriver.adl
 
