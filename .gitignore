@@ -1,0 +1,15 @@
+# EPICS install path
+/bin
+/cfg
+/db
+/dbd
+/lib
+/python
+
+# generated file
+envPaths
+
+O.*
+
+# vim
+*.swp
