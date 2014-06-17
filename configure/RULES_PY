@@ -1,15 +1,1 @@
-# Rules to install python scripts
-
-PYTHON_SCRIPTS = scope.py
-
-INSTALL_PYTHON = $(INSTALL_LOCATION)/scripts
-
-define PYTHON_SCRIPTS_template
-$$(INSTALL_PYTHON)/$(1) : $(1)
-	$(ECHO) "Installing $$@"
-	@$$(INSTALL) -d $$^  $$(INSTALL_PYTHON)
-endef
-
-$(foreach file, $(PYTHON_SCRIPTS), $(eval $(call PYTHON_SCRIPTS_template,$(file))))
-
 
