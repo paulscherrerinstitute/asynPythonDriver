@@ -1,0 +1,113 @@
+#include <string.h>
+
+#include <epicsString.h>
+#include <epicsMutex.h>
+
+#include <cantProceed.h>
+
+#include <asynDriver.h>
+#include <asynStandardInterfaces.h>
+
+typedef struct {
+    asynUser *pasynUserSelf;
+    char *portName;
+    epicsMutexId mutexId;
+    asynStardardInterfaces asynStdInterfaces;
+    
+} PythonPort_t;
+
+static const char * driverName = "pythonPortDriver";
+/*
+ * \param[in] portName The name of the asyn port driver to be created.
+ * \param[in] fileName The python source file which provides the functions.
+ * \param[in] asynFlags Flags when creating the asyn port driver; includes ASYN_CANBLOCK and ASYN_MULTIDEVICE.
+ * \param[in] autoConnect The autoConnect flag for the asyn port driver. 
+               1 if the driver should autoconnect.
+ * \param[in] priority The thread priority for the asyn port driver thread if ASYN_CANBLOCK is set in asynFlags.
+               If it is 0 then the default value of epicsThreadPriorityMedium will be assigned by asynManager.
+ * \param[in] stackSize The stack size for the asyn port driver thread if ASYN_CANBLOCK is set in asynFlags.
+               If it is 0 then the default value of epicsThreadGetStackSize(epicsThreadStackMedium)
+               will be assigned by asynManager.
+ */
+int pythonPortConfigure(const char *portName, const char *fileName, int asynFlags, int autoConnect, int priority, int stackSize)
+{
+    asynStatus status;
+    const char *functionName = "pythonPortConfigure";
+    asynStandardInterfaces *pInterfaces;
+    int interfaceMask = 0;
+    PythonPort_t *python;
+    int asynInterruptMask;
+
+    /* Create port data structure */
+    python = (PythonPort_t *)callocMustSucceed(1, sizeof(PythonPort_t),
+          "PythonPortConfigure()");
+ 
+    /* Initialize some members to 0 */
+    pInterfaces = &python->asynStdInterfaces;
+    memset(pInterfaces, 0, sizeof(asynStdInterfaces));
+       
+    python->portName = epicsStrDup(portNameIn);
+
+    /* Create the epicsMutex for locking access to data structures from other threads */
+    python->mutexId = epicsMutexCreate();
+    if (!python->mutexId) {
+        printf("%s::%s ERROR: epicsMutexCreate failure\n", driverName, functionName);
+        return;
+    }
+
+    status = pasynManager->registerPort(portName,
+                                        asynFlags,    /* multidevice and canblock flags */
+                                        autoConnect,  /* autoconnect flag */
+                                        priority,     /* priority */
+                                        stackSize);   /* stack size */
+    if (status != asynSuccess) {
+        printf("%s:%s: ERROR: Can't register port\n", driverName, functionName);
+    }
+
+    /* Create asynUser for debugging and for standardInterfacesBase */
+    python->pasynUserSelf = pasynManager->createAsynUser(0, 0);
+    
+    /* The following asynPrint will be governed by the global trace mask since asynUser is not yet connected to port */
+    asynPrint(python->pasynUserSelf, ASYN_TRACE_FLOW,
+        "%s:%s: creating port %s\n"
+        "    asynFlags=0x%X, autoConnect=%d, priority=%d, stackSize=%d\n",
+        driverName, functionName, python->portName,
+        asynFlags, autoConnect, priority, stackSize);
+
+     /* Set addresses of asyn interfaces */
+    pInterfaces->common.pinterface        = (void *)&ifaceCommon;
+    pInterfaces->drvUser.pinterface       = (void *)&ifaceDrvUser;
+    pInterfaces->int32.pinterface         = (void *)&ifaceInt32;
+    pInterfaces->uInt32Digital.pinterface = (void *)&ifaceUInt32Digital;
+    pInterfaces->float64.pinterface       = (void *)&ifaceFloat64;
+    pInterfaces->octet.pinterface         = (void *)&ifaceOctet;
+    pInterfaces->int8Array.pinterface     = (void *)&ifaceInt8Array;
+    pInterfaces->int16Array.pinterface    = (void *)&ifaceInt16Array;
+    pInterfaces->int32Array.pinterface    = (void *)&ifaceInt32Array;
+    pInterfaces->float32Array.pinterface  = (void *)&ifaceFloat32Array;
+    pInterfaces->float64Array.pinterface  = (void *)&ifaceFloat64Array;
+    pInterfaces->genericPointer.pinterface= (void *)&ifaceGenericPointer;
+    pInterfaces->Enum.pinterface          = (void *)&ifaceEnum;
+
+    /* Define which interfaces can generate interrupts */
+    pInterfaces->int32CanInterrupt          = 1;
+    pInterfaces->uInt32DigitalCanInterrupt  = 1;
+    pInterfaces->float64CanInterrupt        = 1;
+    pInterfaces->octetCanInterrupt          = 1;
+    pInterfaces->int8ArrayCanInterrupt      = 1;
+    pInterfaces->int16ArrayCanInterrupt     = 1;
+    pInterfaces->int32ArrayCanInterrupt     = 1;
+    pInterfaces->float32ArrayCanInterrupt   = 1;
+    pInterfaces->float64ArrayCanInterrupt   = 1;
+    pInterfaces->genericPointerCanInterrupt = 1;
+    pInterfaces->enumCanInterrupt           = 1;
+
+    status = pasynStandardInterfacesBase->initialize(portName, pInterfaces,
+                                                     python->pasynUserSelf, python);
+    if (status != asynSuccess) {
+        asynPrint(python->pasynUserSelf, ASYN_TRACE_ERROR,
+            "%s:%s ERROR: Can't register interfaces: %s.\n",
+            driverName, functionName, python->pasynUserSelf->errorMessage);
+        return;
+    }
+}
