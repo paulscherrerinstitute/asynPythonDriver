@@ -101,7 +101,7 @@ class PythonDriver(object):
         for i in [1., 2., 5., 10.]:
             value = int(i/igain * 1000 + 0.5)
             self.voltsdiv_enum += [('%.2f'%(i/igain), value, 0)]
-        param.callbackEnum(param.this, PythonDriver.voltsdiv_menu.name, self.voltsdiv_enum)
+        self.updateEnum(PythonDriver.voltsdiv_menu.name, self.voltsdiv_enum)
 
     def read(self, reason):
         return PythonDriver.__dict__[self.params[reason]].__get__(self, PythonDriver)
@@ -126,6 +126,9 @@ class PythonDriver(object):
 
     def update(self):
         param.callback(param.this) 
+
+    def updateEnum(self, reason, enums):
+        param.callbackEnum(param.this, reason, enums)
 
     def simTask(self):
         while (True):
