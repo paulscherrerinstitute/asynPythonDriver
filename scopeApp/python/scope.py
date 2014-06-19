@@ -1,4 +1,5 @@
-import param
+
+import param # param is an extension in asynPythonDriver library.
 
 class Param(object):
     """
@@ -14,6 +15,7 @@ class Param(object):
         self.reason = param.create(param.this, name, dtype)
 
     def __get__(self, obj, obj_type):
+        # return self if called from class object
         if obj is None:
             return self 
         # when param got read, read the value from C++ 
@@ -29,8 +31,6 @@ class Param(object):
         param.set(param.this, self.name, self.dtype, value)
 
 
-import inspect
-import random
 import numpy
 import time
 import threading
@@ -40,11 +40,37 @@ FREQUENCY=1000 #      /* Frequency in Hz */
 AMPLITUDE=1.0  #      /* Plus and minus peaks of sin wave */
 NUM_DIVISIONS=10 #    /* Number of scope divisions in X and Y */
 
-import inspect
+
+class PythonDriverMeta(type):
+    def __new__(self, clsname, base, clsdict):
+        # Create the class definition
+        cls = type.__new__(self, clsname, base, clsdict)
+        # Find Param instances and assocate the variable name with its Param name
+        # It serves as a lookup table
+        params = {}
+        for name, value in clsdict.items():
+            if isinstance(value, Param):
+                params[value.name] = name
+        setattr(cls, 'params', params)
+
+        return cls
+
 
 class PythonDriver(object):
+    __metaclass__ = PythonDriverMeta
+
+    def update(self):
+        param.callback(param.this) 
+
+    def updateEnum(self, reason, enums):
+        param.callbackEnum(param.this, reason, enums)
+
+
+class ScopeDriver(PythonDriver):
     # these parameters must match the definitions of EPICS database
-    # The first is the drvInfo string and the second is the data type
+    # The first argument is the drvInfo string and the second is the data type
+    # Ideally this could be parsed from EPICS database.
+    # The variable name could be inferred from record name or the info fields, e.g. info(pyname, "x")
     run = Param("SCOPE_RUN", param.Int32)
     npoints = Param("SCOPE_MAX_POINTS", param.Int32)
     refresh = Param("SCOPE_UPDATE_TIME", param.Float64)
@@ -68,6 +94,7 @@ class PythonDriver(object):
     timediv = Param("SCOPE_TIME_PER_DIV", param.Float64)
 
     def __init__(self):
+        # Initialize parameters
         self.npoints = 1000
         self.gain_menu = 10
         self.setGain()
@@ -82,12 +109,6 @@ class PythonDriver(object):
         self.offset = 0
         self.run = 0
         self.timebase = numpy.linspace(0, 1, self.npoints) * NUM_DIVISIONS
-        # correlate instance name with param name
-        # this could be done using metaclass
-        self.params = {}
-        for name, value in PythonDriver.__dict__.items():
-            if isinstance(value, Param):
-                self.params[value.name] = name
 
         self.event = threading.Event()
         self.tid = threading.Thread(target=self.simTask)
@@ -101,34 +122,28 @@ class PythonDriver(object):
         for i in [1., 2., 5., 10.]:
             value = int(i/igain * 1000 + 0.5)
             self.voltsdiv_enum += [('%.2f'%(i/igain), value, 0)]
-        self.updateEnum(PythonDriver.voltsdiv_menu.name, self.voltsdiv_enum)
+        self.updateEnum(ScopeDriver.voltsdiv_menu.name, self.voltsdiv_enum)
 
     def read(self, reason):
-        return PythonDriver.__dict__[self.params[reason]].__get__(self, PythonDriver)
+        return getattr(self, self.params[reason])
 
     def readEnum(self, reason):
-        if reason == PythonDriver.voltsdiv_menu.name:
+        if reason == ScopeDriver.voltsdiv_menu.name:
             return self.voltsdiv_enum
 
     def write(self, reason, value):
         # store the value
-        PythonDriver.__dict__[self.params[reason]].__set__(None, value)
+        setattr(self, self.params[reason], value)
         
-        if reason == PythonDriver.run.name:
+        if reason == ScopeDriver.run.name:
             if value == 1:
                 self.event.set()
-        elif reason == PythonDriver.gain_menu.name:
+        elif reason == ScopeDriver.gain_menu.name:
             self.setGain()
-        elif reason == PythonDriver.timediv_menu.name:
+        elif reason == ScopeDriver.timediv_menu.name:
             self.timediv = value / 1000000.
-        elif reason == PythonDriver.voltsdiv_menu.name:
+        elif reason == ScopeDriver.voltsdiv_menu.name:
             self.voltsdiv = value / 1000.
-
-    def update(self):
-        param.callback(param.this) 
-
-    def updateEnum(self, reason, enums):
-        param.callbackEnum(param.this, reason, enums)
 
     def simTask(self):
         while (True):
@@ -151,4 +166,4 @@ class PythonDriver(object):
             time.sleep(self.refresh)
 
 
-driver = PythonDriver()
+driver = ScopeDriver()
