@@ -4,7 +4,7 @@
 ## everywhere it appears in this file
 
 < envPaths
-epicsEnvSet PYTHONPATH,${TOP}/python
+epicsEnvSet PYTHONPATH,${TOP}/python:${ASYNPYTHON}/python
 
 cd ${TOP}
 
