@@ -1,4 +1,4 @@
-
+import os
 import param # param is an extension in asynPythonDriver library.
 
 import pyparsing as pp
@@ -159,11 +159,19 @@ class PythonDriverMeta(type):
         # if database file is defined, load params from it
         if hasattr(cls, '__db__'):
             dbfile = getattr(cls, '__db__')
-            records = parseDb(open(dbfile).read())
-            params = findParams(records)
-            for drvinfo, info in params.items():
-                param =  Param(drvinfo, DataType[info[1]])
-                setattr(cls, info[0], param)
+            # compose a list of path to search EPICS templates
+            paths = []
+            if 'TOP' in os.environ:
+                paths.append(os.path.join(os.environ.get('TOP'), 'db'))
+            paths.append(os.getcwd())
+            for path in paths:
+                dbfullpath = os.path.join(path, dbfile)
+                if os.path.exists(dbfullpath):
+                    records = parseDb(open(dbfullpath).read())
+                    params = findParams(records)
+                    for drvinfo, info in params.items():
+                        param =  Param(drvinfo, DataType[info[1]])
+                        setattr(cls, info[0], param)
 
         # Find Param instances and assocate the variable name with its Param name
         # It serves as a lookup table
@@ -191,7 +199,7 @@ class ScopeDriver(PythonDriver):
     # The first argument is the drvInfo string and the second is the data type
     # Ideally this could be parsed from EPICS database.
     # The variable name could be inferred from record name or the info fields, e.g. info(pyname, "x")
-    __db__ = '/Users/wang/Development/asynPythonDriver/db/scope.template'
+    __db__ = 'scope.template'
 
     def __init__(self):
         # Initialize parameters
