@@ -4,6 +4,8 @@
 ## everywhere it appears in this file
 
 < envPaths
+
+## add python module paths
 epicsEnvSet PYTHONPATH,${TOP}/python:${ASYNPYTHON}/python
 
 cd ${TOP}
