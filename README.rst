@@ -13,11 +13,11 @@ IOC shell command to configure a python port::
      * moduleName: The python module to import.
      * numParams: The number of parameters in this driver.
      */
-    asynPythonConfigure(const char *portName, const char *pythonModule, int numParams)
+    asynPythonDriverConfigure(const char *portName, const char *pythonModule, int numParams)
 
 PythonDriver
 ------------
-`PythonDriver` is a base class that implements the connection between EPICS database and asynPortDriver parameter table. There are two steps for the derived class to define this connections.
+``PythonDriver`` is a base class that implements the connection between EPICS database and asynPortDriver parameter table. There are two steps for the derived class to define this connections.
 
 Suppose we have an EPICS template file *test.template*,::
 
@@ -32,7 +32,7 @@ Suppose we have an EPICS template file *test.template*,::
 
 The key is the *info (pyname, "rand")* field, that defines the variable name which we will refer to in our Python class.
 
-In the Python module *test.py*, class `TestPythonDriver`, ::
+In the Python module *test.py*, class ``TestPythonDriver``, ::
 
     import time
     import random
@@ -54,7 +54,7 @@ In the Python module *test.py*, class `TestPythonDriver`, ::
     # create an instance
     driver = TestPythonDriver()
 
-The *__db__* class attribute links Python class to EPICS database. The base class in turn creates class attributes for each records having *info (pyname, "")* specified. In this example, *rand* will be accessible just like a normal numeric value. Call base class method `update` to update the value.
+The *__db__* class attribute links Python class to EPICS database. The base class in turn creates class attributes for each records having *info (pyname, "")* specified. In this example, *rand* will be accessible just like a normal numeric value. Call base class method ``update`` to update the value.
 
 In the startup script, ::
 
@@ -75,8 +75,8 @@ Examples
 Simulated Oscilloscope
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The driver is from *testAsynPortDriver* has been ported. The EPICS database is copied with no change. 
-Only that the C++ file testAsynPortDriver.cpp has been written in Python scope.py. 
+The driver from *testAsynPortDriver* has been ported. The EPICS database is copied, with addition of *info(pyname,"")* fields.
+Only that the C++ file *testAsynPortDriver.cpp* has been written in Python *scope.py*.
 
 ::
 
@@ -89,3 +89,9 @@ Launch MEDM::
     
     medm -x -macro P=MTEST:,R=SCOPE: testAsynPortDriver.adl
 
+Known Problems
+--------------
+
+- For input records, ai, longin, stringin, the SCAN field can only be *I/O Intr*. Which means the records has to be updated by the driver and then call ``self.update``.
+
+- Each asynPythonDriverConfigure creates a Python sub-interpreter, in order to isolate the modules. And watch out the `bug and caveats <https://docs.python.org/2/c-api/init.html#bugs-and-caveats>`_ about sub-interpreter.
