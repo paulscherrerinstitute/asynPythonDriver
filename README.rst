@@ -21,7 +21,9 @@ PythonDriver
 
 Suppose we have an EPICS template file *test.template*,::
 
-    record(ai, "RAND") {
+    record(ai, "RAND")
+    {
+        field (DTYP, "asynFloat64")
         field (INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))RAND")
         field (PREC, "4")
         field (SCAN, "I/O Intr")
@@ -41,7 +43,7 @@ In the Python module *test.py*, class `TestPythonDriver`, ::
         __db__ = "test.template"
         def __init__(self):
             self.tid = threading.Thread(target=self.simTask)
-            self.tid = start()
+            self.tid.start()
 
         def simTask(self):
             while True:
