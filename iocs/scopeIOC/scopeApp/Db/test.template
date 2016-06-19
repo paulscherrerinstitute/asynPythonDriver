@@ -1,0 +1,10 @@
+record(ai, "RAND")
+{
+    field (DTYP, "asynFloat64")
+    field (INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))RAND")
+    field (PREC, "4")
+    field (SCAN, "I/O Intr")
+    info  (pyname, "rand")
+}
+
+
