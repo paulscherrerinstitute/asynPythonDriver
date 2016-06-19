@@ -46,16 +46,13 @@ class ScopeDriver(PythonDriver):
             self.voltsdiv_enum += [('%.2f'%(i/igain), value, 0)]
         self.updateEnum(ScopeDriver.voltsdiv_menu.name, self.voltsdiv_enum)
 
-    def read(self, reason):
-        return getattr(self, self.params[reason])
-
     def readEnum(self, reason):
         if reason == ScopeDriver.voltsdiv_menu.name:
             return self.voltsdiv_enum
 
     def write(self, reason, value):
-        # store the value
-        setattr(self, self.params[reason], value)
+        # call base class to store the value
+        PythonDriver.write(self, reason, value)
         
         if reason == ScopeDriver.run.name:
             if value == 1:

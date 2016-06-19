@@ -179,6 +179,15 @@ class PythonDriverMeta(type):
 class PythonDriver(object):
     __metaclass__ = PythonDriverMeta
 
+    def read(self, reason):
+        return getattr(self, self.params[reason])
+
+    def readEnum(self, reason):
+        pass
+
+    def write(self, reason, value):
+        setattr(self, self.params[reason], value)
+
     def update(self):
         param.callback(param.this) 
 
