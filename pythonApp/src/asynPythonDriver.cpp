@@ -376,8 +376,7 @@ asynStatus asynPythonDriver::readEnum(asynUser *pasynUser, char *strings[], int 
     getParamName(function, &paramName);
 
     /* Call readEnum method of Python module */
-    PyGILState_STATE gstate;
-    gstate = PyGILState_Ensure();
+    PyEval_RestoreThread(this->pThreadState);
     PyObject *pArgs = Py_BuildValue("(s)", paramName);
     PyObject *pRes = PyObject_CallObject(pFuncReadEnum, pArgs);
     if (pRes == NULL) {
@@ -391,7 +390,7 @@ asynStatus asynPythonDriver::readEnum(asynUser *pasynUser, char *strings[], int 
 
     Py_XDECREF(pRes);
     Py_XDECREF(pArgs);
-    PyGILState_Release(gstate);
+    PyEval_SaveThread();
 
     return status;
 }
@@ -414,10 +413,9 @@ asynStatus asynPythonDriver::writeOctet(asynUser *pasynUser, const char *value, 
 
     /* Fetch the parameter string name for possible use in debugging */
     getParamName(function, &paramName);
+    PyEval_RestoreThread(this->pThreadState);
 
     /* Call write method of Python module */
-    PyGILState_STATE gstate;
-    gstate = PyGILState_Ensure();
     PyObject *pArgs = Py_BuildValue("(ss)", paramName, value);
     PyObject *pRes = PyObject_CallObject(pFuncWrite, pArgs);
     if (pRes == NULL) {
@@ -426,7 +424,7 @@ asynStatus asynPythonDriver::writeOctet(asynUser *pasynUser, const char *value, 
     }
     Py_XDECREF(pRes);
     Py_XDECREF(pArgs);
-    PyGILState_Release(gstate);
+    PyEval_SaveThread();
 
     /* Do callbacks so higher layers see any changes */
     status = (asynStatus) callParamCallbacks();
@@ -492,8 +490,7 @@ asynStatus asynPythonDriver::writeInt32(asynUser *pasynUser, epicsInt32 value)
     getParamName(function, &paramName);
 
     /* Call write method of Python module */
-    PyGILState_STATE gstate;
-    gstate = PyGILState_Ensure();
+    PyEval_RestoreThread(this->pThreadState);
     PyObject *pArgs = Py_BuildValue("(si)", paramName, value);
     PyObject *pRes = PyObject_CallObject(pFuncWrite, pArgs);
     if (pRes == NULL) {
@@ -502,7 +499,7 @@ asynStatus asynPythonDriver::writeInt32(asynUser *pasynUser, epicsInt32 value)
     }
     Py_XDECREF(pRes);
     Py_XDECREF(pArgs);
-    PyGILState_Release(gstate);
+    PyEval_SaveThread();
 
     /* Do callbacks so higher layers see any changes */
     status = (asynStatus) callParamCallbacks();
@@ -565,8 +562,7 @@ asynStatus asynPythonDriver::writeFloat64(asynUser *pasynUser, epicsFloat64 valu
     getParamName(function, &paramName);
 
     /* Call write method of Python module */
-    PyGILState_STATE gstate;
-    gstate = PyGILState_Ensure();
+    PyEval_RestoreThread(this->pThreadState);
     PyObject *pArgs = Py_BuildValue("(sd)", paramName, value);
     PyObject *pRes = PyObject_CallObject(pFuncWrite, pArgs);
     if (pRes == NULL) {
@@ -575,7 +571,7 @@ asynStatus asynPythonDriver::writeFloat64(asynUser *pasynUser, epicsFloat64 valu
     }
     Py_XDECREF(pRes);
     Py_XDECREF(pArgs);
-    PyGILState_Release(gstate);
+    PyEval_SaveThread();
 
     /* Do callbacks so higher layers see any changes */
     status = (asynStatus) callParamCallbacks();
@@ -603,8 +599,7 @@ asynStatus asynPythonDriver::readArray(asynUser *pasynUser, epicsType *value, si
     getParamName(function, &paramName);
 
     /* Call read method of Python module */
-    PyGILState_STATE gstate;
-    gstate = PyGILState_Ensure();
+    PyEval_RestoreThread(this->pThreadState);
     PyObject *pArgs = Py_BuildValue("(s)", paramName);
     PyObject *pValue = PyObject_CallObject(pFuncRead, pArgs);
     if (pValue == NULL) {
@@ -620,7 +615,7 @@ asynStatus asynPythonDriver::readArray(asynUser *pasynUser, epicsType *value, si
 
     Py_XDECREF(pValue);
     Py_XDECREF(pArgs);
-    PyGILState_Release(gstate);
+    PyEval_SaveThread();
 
     return status;
 }
@@ -719,14 +714,17 @@ asynPythonDriver::asynPythonDriver(const char *portName, const char *moduleName,
                      0/*asynFlags*/,
                      1/*autoConnect*/, 
                      0/*priority*/, 
-                     0/*stackSize*/), pModule(NULL), pFuncRead(NULL), pFuncReadEnum(NULL), pFuncWrite(NULL), pParams(NULL)
+                     0/*stackSize*/), pModule(NULL), pFuncRead(NULL), pFuncReadEnum(NULL), pFuncWrite(NULL), pParams(NULL), pThreadState(NULL)
 {
     /* Initialize Python */
     Py_Initialize();
 
     /* Initialize thread support */
     PyEval_InitThreads();
-    PyThreadState *pts = PyGILState_GetThisThreadState();
+
+    this->pThreadState = Py_NewInterpreter();
+
+    //PyThreadState *pThreadState = PyGILState_GetThisThreadState();
 
     /* Create extenion module */
     PyObject *pParams = Py_InitModule("param", ParamMethods);
@@ -768,7 +766,16 @@ asynPythonDriver::asynPythonDriver(const char *portName, const char *moduleName,
     }
 
     /* We are done with Python interpreter in main thread */
-    PyEval_ReleaseThread(pts);
+    PyEval_SaveThread();
+}
+
+asynPythonDriver::~asynPythonDriver()
+{
+    if (this->pThreadState) {
+        PyEval_RestoreThread(this->pThreadState);
+        Py_EndInterpreter(this->pThreadState);
+        PyEval_ReleaseLock(); // nb: release the GIL
+    }
 }
 
 

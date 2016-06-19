@@ -7,6 +7,7 @@
 class /*epicsShareFunc*/ asynPythonDriver : public asynPortDriver {
 public:
     asynPythonDriver(const char *portName, const char *pythonFileName, int numParams);
+    ~asynPythonDriver();
 
     /* These are the methods that we override from asynPortDriver */
     
@@ -32,5 +33,6 @@ public:
 
 protected:
     PyObject *pModule, *pFuncRead, *pFuncReadEnum, *pFuncWrite, *pParams;
+    PyThreadState *pThreadState;
 };
 #endif
