@@ -6,6 +6,11 @@
 /lib
 /python
 
+/iocs/*IOC/bin
+/iocs/*IOC/db
+/iocs/*IOC/dbd
+/iocs/*IOC/python
+
 # generated file
 envPaths
 
