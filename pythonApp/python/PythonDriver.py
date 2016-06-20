@@ -2,105 +2,7 @@ __all__ = ['PythonDriver']
 import os
 import param # param is an extension in asynPythonDriver library.
 
-import pyparsing as pp
-def parseDb(content):
-    """
-    Parse an EPICS.db file.
-
-    Return a list of EPICS record dictionaries. Each record dict contains the EPICS-field
-    and value pairs and additional keys for:
-
-    - recordname
-    - alias
-    - RTYP
-    - info {INFOKEY:INFOVALUE,}
-    """
-    recordName= pp.ZeroOrMore(pp.Suppress(pp.Word('"'))) +\
-                pp.Word(pp.alphanums+"_-+:[]<>;$()") +\
-                pp.ZeroOrMore(pp.Suppress(pp.Word('"')))
-    qString   = pp.dblQuotedString.setParseAction(pp.removeQuotes) # double quoted String, quotes removed
-
-    comment   = pp.Suppress(pp.pythonStyleComment)
-    alias     = pp.Group(pp.Keyword("alias") +\
-                pp.Suppress(pp.Word("(")) +\
-                recordName +  pp.Suppress(pp.Word(",")) +\
-                recordName + pp.Suppress(pp.Word(")")) )
-    field     = pp.Group((pp.Keyword("field")^pp.Keyword("info")) +\
-                pp.Suppress(pp.Word("(")) + pp.Word(pp.alphanums) + pp.Suppress(pp.Word(",")) + qString + pp.Suppress(pp.Word(")")) +\
-                pp.ZeroOrMore(comment) ^\
-                pp.Keyword("alias") + pp.Suppress(pp.Word("(")) + recordName +  pp.Suppress(pp.Word(")")) + pp.ZeroOrMore(comment))
-    record    = pp.Group(pp.Keyword("record") + pp.Suppress(pp.Word("(")) +\
-                    pp.Word(pp.alphanums) + pp.Suppress(pp.Word(",")) + recordName +\
-                pp.Suppress(pp.Word(")")) + pp.ZeroOrMore(comment) +\
-                pp.Suppress(pp.Word("{")) + pp.ZeroOrMore(comment) + pp.Group(pp.ZeroOrMore(field)) + pp.Suppress(pp.Word("}")))
-    epicsDb   = pp.OneOrMore(comment ^ alias ^ record)
-
-    recordList = []
-    for pGroup in epicsDb.parseString(content):
-        if pGroup[0] == 'record':
-            rec = {'RTYP':pGroup[1],'recordname':pGroup[2]}
-            if len(pGroup) <= 3:
-                    continue
-            for fields in pGroup[3]:
-                if fields[0] == 'field':     # ['field','fieldType','fieldValue']
-                    rec[fields[1]]=fields[2]
-                if fields[0] == 'alias':
-                    rec['alias'] = fields[1]
-                if fields[0] == 'info':
-                    if not rec.has_key('info'):
-                        rec['info'] = {}
-                    rec['info'][fields[1]] = fields[2]
-            recordList.append(rec)
-    return recordList
-
-import re
-def findParams(records):
-    # regexp patterns to remove macros like $(P)
-    macro_pat = re.compile('\$\(.*?\)')
-    # regexp pattern to extract drv info string 
-    link_pat = re.compile('^@asyn\(.*\)\s*(.*)')
-    # extract data type info from device type (DTYP)
-    dtype_pat = re.compile('^asyn(.*?)(|In|Out|Read|Write)$')
-
-    params = {}
-    for record in records:
-        recname = macro_pat.sub('', record['recordname'])
-        # strip off _RBV suffix, this is only a convention
-        recname = recname.rstrip('_RBV')
-
-        # check dtype is asynXXX(In|Out|Read|Write)
-        m = dtype_pat.match(record.get('DTYP', ''))
-        if m is None or m.group(1) == '':
-            continue
-        dtype = m.group(1)
-
-        # get INP or OUT link
-        if 'INP' in record:
-            iolink = record['INP']
-        elif 'OUT' in record:
-            iolink = record['OUT']
-        else:
-            continue
-        # check link is of form @asyn()drvinfo
-        m = link_pat.match(iolink)
-        if m is None or m.group(1) == '':
-            continue
-        drvinfo = m.group(1)
-
-        # try 'pyname' info
-        pyname = ''
-        if 'info' in record:
-            if 'pyname' in record['info']:
-                pyname = record['info']['pyname']
-
-        if drvinfo not in params:
-            if pyname != '':
-                name = pyname
-            else:
-                name = recname
-            params[drvinfo] = (name, dtype)
-    return params
-
+from DBParser import parse_database, find_params
 
 class Param(object):
     """
@@ -159,8 +61,8 @@ class PythonDriverMeta(type):
             for path in paths:
                 dbfullpath = os.path.join(path, dbfile)
                 if os.path.exists(dbfullpath):
-                    records = parseDb(open(dbfullpath).read())
-                    params = findParams(records)
+                    records = parse_database(open(dbfullpath).read())
+                    params = find_params(records)
                     for drvinfo, info in params.items():
                         param =  Param(drvinfo, DataType[info[1]])
                         setattr(cls, info[0], param)
