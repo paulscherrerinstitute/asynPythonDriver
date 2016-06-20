@@ -1,0 +1,8 @@
+require "asynPythonDriver"
+
+epicsEnvSet("PYTHONPATH", ".:bin:$(PYTHONPATH)")
+
+asynPythonDriverConfigure("PY1", "test", 1)
+
+dbLoadRecords("test.template", "PORT=PY1,ADDR=0,TIMEOUT=1")
+
