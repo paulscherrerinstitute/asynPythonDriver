@@ -15,6 +15,8 @@ IOC shell command to configure a python port::
      */
     asynPythonDriverConfigure(const char *portName, const char *pythonModule, int numParams)
 
+.. note:: The last argument *numParams* can be omitted for asyn 4.32+.
+
 PythonDriver
 ------------
 ``PythonDriver`` is a base class that implements the connection between EPICS database and asynPortDriver parameter table. There are two steps for the derived class to define this connection.
