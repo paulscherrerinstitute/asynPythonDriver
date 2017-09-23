@@ -17,7 +17,7 @@ IOC shell command to configure a python port::
 
 PythonDriver
 ------------
-``PythonDriver`` is a base class that implements the connection between EPICS database and asynPortDriver parameter table. There are two steps for the derived class to define this connections.
+``PythonDriver`` is a base class that implements the connection between EPICS database and asynPortDriver parameter table. There are two steps for the derived class to define this connection.
 
 Suppose we have an EPICS template file *test.template*,::
 
@@ -75,7 +75,7 @@ Examples
 Simulated Oscilloscope
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The driver from *testAsynPortDriver* has been ported. The EPICS database is copied, with addition of *info(pyname,"")* fields.
+The driver from *testAsynPortDriver* has been ported. The original EPICS database is copied, with addition of *info(pyname,"")* fields.
 Only that the C++ file *testAsynPortDriver.cpp* has been written in Python *scope.py*.
 
 ::
@@ -92,6 +92,6 @@ Launch MEDM::
 Known Problems
 --------------
 
-- For input records, ai, longin, stringin, the SCAN field can only be *I/O Intr*. Which means the records has to be updated by the driver and then call ``self.update``.
+- For input records, ai, longin, stringin, the SCAN field can only be *I/O Intr*. That means these records have to be updated by the driver and then call ``self.update``.
 
 - Each asynPythonDriverConfigure creates a Python sub-interpreter, in order to isolate the modules. And watch out the `bug and caveats <https://docs.python.org/2/c-api/init.html#bugs-and-caveats>`_ about sub-interpreter.
