@@ -706,7 +706,10 @@ void asynPythonDriver::report(FILE *fp, int details)
   */
 
 asynPythonDriver::asynPythonDriver(const char *portName, const char *moduleName, int numParams)
-    : asynPortDriver(portName, 1/*maxAddr*/, numParams/*NUM_PARAMS*/, 
+    : asynPortDriver(portName, 1/*maxAddr*/,
+#if ASYN_VERSION == 4 && ASYN_REVISION < 32
+                     numParams/*NUM_PARAMS*/,
+#endif
                      asynInt32Mask | asynFloat64Mask | asynOctetMask | asynEnumMask | 
                      asynInt8ArrayMask | asynInt16ArrayMask | asynInt32ArrayMask | asynFloat32ArrayMask | asynFloat64ArrayMask | asynDrvUserMask, /*Interface mask*/
                      asynInt32Mask | asynFloat64Mask | asynOctetMask | asynEnumMask | 
