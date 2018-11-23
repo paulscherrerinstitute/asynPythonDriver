@@ -719,15 +719,15 @@ asynPythonDriver::asynPythonDriver(const char *portName, const char *moduleName,
                      0/*priority*/, 
                      0/*stackSize*/), pModule(NULL), pFuncRead(NULL), pFuncReadEnum(NULL), pFuncWrite(NULL), pParams(NULL), pThreadState(NULL)
 {
-    /* Initialize Python */
-    Py_Initialize();
-
-    /* Initialize thread support */
-    PyEval_InitThreads();
-
-    this->pThreadState = Py_NewInterpreter();
-
-    //PyThreadState *pThreadState = PyGILState_GetThisThreadState();
+    /* Initialize Python and thread support */
+    if (!Py_IsInitialized()) {
+        Py_Initialize();
+        PyEval_InitThreads();
+        this->pThreadState = PyThreadState_Get();
+    } else {
+        PyEval_AcquireLock();
+        this->pThreadState = Py_NewInterpreter();
+    }
 
     /* Create extenion module */
     PyObject *pParams = Py_InitModule("param", ParamMethods);
