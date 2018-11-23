@@ -770,12 +770,13 @@ asynPythonDriver::asynPythonDriver(const char *portName, const char *moduleName,
     PyEval_SaveThread();
 }
 
+/* The dtor is nowhere called when IOC exits, thus untested. */
 asynPythonDriver::~asynPythonDriver()
 {
     if (this->pThreadState) {
         PyEval_RestoreThread(this->pThreadState);
         Py_EndInterpreter(this->pThreadState);
-        PyEval_ReleaseLock(); // nb: release the GIL
+        PyEval_ReleaseLock();
     }
 }
 
