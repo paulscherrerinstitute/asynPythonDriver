@@ -32,7 +32,7 @@ public:
     /* These are the methods that are new to this class */
 
 protected:
-    PyObject *pModule, *pFuncRead, *pFuncReadEnum, *pFuncWrite, *pParams;
+    PyObject *pModule, *pFuncRead, *pFuncReadEnum, *pFuncWrite;
     PyThreadState *pThreadState;
 };
 #endif

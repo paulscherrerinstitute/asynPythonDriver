@@ -717,7 +717,7 @@ asynPythonDriver::asynPythonDriver(const char *portName, const char *moduleName,
                      0/*asynFlags*/,
                      1/*autoConnect*/, 
                      0/*priority*/, 
-                     0/*stackSize*/), pModule(NULL), pFuncRead(NULL), pFuncReadEnum(NULL), pFuncWrite(NULL), pParams(NULL), pThreadState(NULL)
+                     0/*stackSize*/), pModule(NULL), pFuncRead(NULL), pFuncReadEnum(NULL), pFuncWrite(NULL), pThreadState(NULL)
 {
     /* Initialize Python and thread support */
     if (!Py_IsInitialized()) {
