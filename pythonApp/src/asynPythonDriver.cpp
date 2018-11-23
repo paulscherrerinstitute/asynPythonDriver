@@ -731,18 +731,16 @@ asynPythonDriver::asynPythonDriver(const char *portName, const char *moduleName,
 
     /* Create extenion module */
     PyObject *pParams = Py_InitModule("param", ParamMethods);
-    PyObject *driver = PyCObject_FromVoidPtr((void*)this, NULL);
-    PyObject_SetAttrString(pParams, "this", driver); 
-    PyObject_SetAttrString(pParams, "Int32", PyLong_FromLong(asynParamInt32));
-    PyObject_SetAttrString(pParams, "UInt32Digital", PyLong_FromLong(asynParamUInt32Digital));
-    PyObject_SetAttrString(pParams, "Float64", PyLong_FromLong(asynParamFloat64));
-    PyObject_SetAttrString(pParams, "Octet", PyLong_FromLong(asynParamOctet));
-    PyObject_SetAttrString(pParams, "Int8Array", PyLong_FromLong(asynParamInt8Array));
-    PyObject_SetAttrString(pParams, "Int16Array", PyLong_FromLong(asynParamInt16Array));
-    PyObject_SetAttrString(pParams, "Int32Array", PyLong_FromLong(asynParamInt32Array));
-    PyObject_SetAttrString(pParams, "Float32Array", PyLong_FromLong(asynParamFloat32Array));
-    PyObject_SetAttrString(pParams, "Float64Array", PyLong_FromLong(asynParamFloat64Array));
-    Py_XDECREF(driver);
+    PyModule_AddObject(pParams,      "this",          PyCObject_FromVoidPtr((void*)this, NULL));
+    PyModule_AddIntConstant(pParams, "Int32",         asynParamInt32);
+    PyModule_AddIntConstant(pParams, "UInt32Digital", asynParamUInt32Digital);
+    PyModule_AddIntConstant(pParams, "Float64",       asynParamFloat64);
+    PyModule_AddIntConstant(pParams, "Octet",         asynParamOctet);
+    PyModule_AddIntConstant(pParams, "Int8Array",     asynParamInt8Array);
+    PyModule_AddIntConstant(pParams, "Int16Array",    asynParamInt16Array);
+    PyModule_AddIntConstant(pParams, "Int32Array",    asynParamInt32Array);
+    PyModule_AddIntConstant(pParams, "Float32Array",  asynParamFloat32Array);
+    PyModule_AddIntConstant(pParams, "Float64Array",  asynParamFloat64Array);
 
     /* Import user module and locate dirver support methods */
     pModule = PyImport_ImportModule(moduleName);
