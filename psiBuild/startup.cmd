@@ -1,1 +1,1 @@
-epicsEnvSet("PYTHONPATH", "$($(MODULE)_DIR):$(PYTHONPATH)")
+epicsEnvSet("PYTHONPATH", "$($(MODULE)_DIR):$(PYTHONPATH=)")
