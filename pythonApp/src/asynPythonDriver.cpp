@@ -30,7 +30,7 @@ template <typename epicsType>
 static epicsType* getArrayFromPython(PyObject *pValue, epicsType *value, size_t nElements, size_t *nIn)
 {
     if (PyObject_CheckBuffer(pValue)) {
-        int length;
+        size_t length;
         Py_buffer buffer;
         if(PyObject_GetBuffer(pValue, &buffer, PyBUF_SIMPLE) != 0) {
             PyErr_Print();
@@ -46,14 +46,14 @@ static epicsType* getArrayFromPython(PyObject *pValue, epicsType *value, size_t 
             *nIn = length;
         }
     } else if (PySequence_Check(pValue)) {
-        int length = PySequence_Length(pValue);
+        size_t length = PySequence_Length(pValue);
         if (value == NULL) {
             value = (epicsType *)malloc(length * sizeof(epicsType));
         } else {
             if (length > nElements) length = nElements;
         }
         PyObject *item;
-        for (int i=0; i<length; i++) {
+        for (size_t i=0; i<length; i++) {
             item = PySequence_GetItem(pValue, i);
             value[i] = (epicsType)PyFloat_AsDouble(item);
             Py_DECREF(item);
