@@ -9,6 +9,20 @@
  */
 #include <Python.h>
 
+#if PY_MAJOR_VERSION >= 3
+    #define PyString_FromString PyUnicode_FromString
+    #define PyString_AsString PyUnicode_AsUTF8
+    #define CAPSULE_BUILD(ptr,name, destr) PyCapsule_New(ptr, name, destr)
+    #define CAPSULE_CHECK(obj) PyCapsule_CheckExact(obj)
+    #define CAPSULE_EXTRACT(obj,name) PyCapsule_GetPointer(obj, name)
+#else
+    #define CAPSULE_BUILD(ptr,name, destr) PyCObject_FromVoidPtr(ptr, destr)
+    #define CAPSULE_CHECK(obj) PyCObject_Check(obj)
+    #define CAPSULE_EXTRACT(obj,name) PyCObject_AsVoidPtr(obj)
+#endif
+
+#include <string>
+
 #include <epicsString.h>
 #include <iocsh.h>
 
@@ -116,10 +130,10 @@ static PyObject *Py_createParam(PyObject *self, PyObject*args)
     if(!PyArg_ParseTuple(args, "Osi", &pThis, &name, &type))
         return NULL;
 
-    if (!PyCObject_Check(pThis))
+    if (!CAPSULE_CHECK(pThis))
         return NULL;
 
-    asynPythonDriver *pDriver = reinterpret_cast<asynPythonDriver *>(PyCObject_AsVoidPtr(pThis));
+    asynPythonDriver *pDriver = reinterpret_cast<asynPythonDriver *>(CAPSULE_EXTRACT(pThis, "asynPythonDriver"));
     if (pDriver == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "Invalid asynPythonDriver instance");
         return NULL;
@@ -152,10 +166,10 @@ static PyObject *Py_getParam(PyObject *self, PyObject *args)
     if(!PyArg_ParseTuple(args, "Osi", &pThis, &name, &type))
         return NULL;
 
-    if (!PyCObject_Check(pThis))
+    if (!CAPSULE_CHECK(pThis))
         return NULL;
 
-    asynPythonDriver *pDriver = reinterpret_cast<asynPythonDriver *>(PyCObject_AsVoidPtr(pThis));
+    asynPythonDriver *pDriver = reinterpret_cast<asynPythonDriver *>(CAPSULE_EXTRACT(pThis, "asynPythonDriver"));
     if (pDriver == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "Invalid asynPythonDriver instance");
         return NULL;
@@ -206,10 +220,10 @@ static PyObject *Py_setParam(PyObject *self, PyObject *args)
     if(!PyArg_ParseTuple(args, "OsiO", &pThis, &name, &type, &pValue))
         return NULL;
 
-    if (!PyCObject_Check(pThis))
+    if (!CAPSULE_CHECK(pThis))
         return NULL;
 
-    asynPythonDriver *pDriver = reinterpret_cast<asynPythonDriver *>(PyCObject_AsVoidPtr(pThis));
+    asynPythonDriver *pDriver = reinterpret_cast<asynPythonDriver *>(CAPSULE_EXTRACT(pThis, "asynPythonDriver"));
     if (pDriver == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "Invalid asynPythonDriver instance");
         return NULL;
@@ -272,10 +286,10 @@ static PyObject *Py_callbackParam(PyObject *self, PyObject *args)
     if(!PyArg_ParseTuple(args, "O", &pThis))
         return NULL;
 
-    if (!PyCObject_Check(pThis)) {
+    if (!CAPSULE_CHECK(pThis)) {
         return NULL;
     }
-    asynPythonDriver *pDriver = reinterpret_cast<asynPythonDriver *>(PyCObject_AsVoidPtr(pThis));
+    asynPythonDriver *pDriver = reinterpret_cast<asynPythonDriver *>(CAPSULE_EXTRACT(pThis, "asynPythonDriver"));
     if (pDriver == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "Invalid asynPythonDriver instance");
         return NULL;
@@ -300,10 +314,10 @@ static PyObject *Py_callbackEnum(PyObject *self, PyObject *args)
     if(!PyArg_ParseTuple(args, "OsO", &pThis, &name, &pValue))
         return NULL;
 
-    if (!PyCObject_Check(pThis)) {
+    if (!CAPSULE_CHECK(pThis)) {
         return NULL;
     }
-    asynPythonDriver *pDriver = reinterpret_cast<asynPythonDriver *>(PyCObject_AsVoidPtr(pThis));
+    asynPythonDriver *pDriver = reinterpret_cast<asynPythonDriver *>(CAPSULE_EXTRACT(pThis, "asynPythonDriver"));
     if (pDriver == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "Invalid asynPythonDriver instance");
         return NULL;
@@ -345,6 +359,22 @@ static PyMethodDef ParamMethods[] = {
     {"callbackEnum", Py_callbackEnum, METH_VARARGS, "Signal changes from enum"},
     {NULL, NULL, 0, NULL}
 };
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef ParamModule = {
+  PyModuleDef_HEAD_INIT,
+  "param", /* name */
+  "asynPortDriver param access", /* doc */
+  -1, /* size */
+  ParamMethods, /* methods */
+  NULL, /* reload */
+  NULL, /* traverse */
+  NULL, /* clear */
+  NULL, /* free */
+};
+
+#endif
+
 
 
 
@@ -730,8 +760,12 @@ asynPythonDriver::asynPythonDriver(const char *portName, const char *moduleName,
     }
 
     /* Create extenion module */
+    #if PY_MAJOR_VERSION >= 3
+    PyObject *pParams = PyModule_Create(&ParamModule);
+    #else
     PyObject *pParams = Py_InitModule("param", ParamMethods);
-    PyModule_AddObject(pParams,      "this",          PyCObject_FromVoidPtr((void*)this, NULL));
+    #endif
+    PyModule_AddObject(pParams,      "this",          CAPSULE_BUILD((void*)this, "asynPythonDriver", NULL));
     PyModule_AddIntConstant(pParams, "Int32",         asynParamInt32);
     PyModule_AddIntConstant(pParams, "UInt32Digital", asynParamUInt32Digital);
     PyModule_AddIntConstant(pParams, "Float64",       asynParamFloat64);
