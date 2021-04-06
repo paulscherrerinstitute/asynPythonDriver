@@ -13,7 +13,7 @@ SCRIPTS += ../pythonApp/python/PythonDriver.py
 
 # Get the version string of python
 PYTHON_VERSION = $(shell python -c 'from distutils import sysconfig; \
-    print sysconfig.get_config_var("VERSION")')
+    print(sysconfig.get_config_var("VERSION"))')
 
 USR_INCLUDES = $(shell python-config --includes)
 USR_LDFALGS =  $(shell python-config --libs)
