@@ -16,7 +16,7 @@ def parse_field(next):
         return
 
     token = next()
-    if token[0] != tokenize.NAME:
+    if token[0] not in (tokenize.NAME, tokenize.STRING):
         return
     field = token[1]
 
