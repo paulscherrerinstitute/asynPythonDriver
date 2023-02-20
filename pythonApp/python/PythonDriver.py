@@ -46,7 +46,7 @@ DataType = {
 }
 
 
-class PythonDriverMeta(type):
+class PythonDriverType(type):
     def __new__(self, clsname, base, clsdict):
         # Create the class definition
         cls = type.__new__(self, clsname, base, clsdict)
@@ -64,6 +64,7 @@ class PythonDriverMeta(type):
                     records = parse_database(open(dbfullpath).read())
                     params = find_params(records)
                     for drvinfo, info in params.items():
+                        print(drvinfo, info)
                         param =  Param(drvinfo, DataType[info[1]])
                         setattr(cls, info[0], param)
 
@@ -77,9 +78,13 @@ class PythonDriverMeta(type):
 
         return cls
 
+# Define empty DriverBase using metaclass syntax compatible with both Python 2 and Python 3
+PythonDriverBase = PythonDriverType(str('PythonDriverBase'), (), {
+    '__doc__': 'PythonDriver base class'
+})
 
-class PythonDriver(object):
-    __metaclass__ = PythonDriverMeta
+
+class PythonDriver(PythonDriverBase):
 
     def read(self, reason):
         return getattr(self, self.params[reason])

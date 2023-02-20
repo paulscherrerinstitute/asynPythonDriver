@@ -11,11 +11,5 @@ SCRIPTS += startup.cmd
 SCRIPTS += ../pythonApp/python/DBParser.py
 SCRIPTS += ../pythonApp/python/PythonDriver.py
 
-# Get the version string of python
-PYTHON_VERSION = $(shell python -c 'from distutils import sysconfig; \
-    print(sysconfig.get_config_var("VERSION"))')
-
-USR_INCLUDES = $(shell python-config --includes)
-USR_LDFALGS =  $(shell python-config --libs)
-USR_SYS_LIBS += python$(PYTHON_VERSION)
-
+USR_INCLUDES = $(shell python3-config --includes)
+USR_LDFLAGS =  $(shell python3-config --libs)

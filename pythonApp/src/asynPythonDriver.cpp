@@ -373,6 +373,10 @@ static struct PyModuleDef ParamModule = {
   NULL, /* free */
 };
 
+PyObject *PyInit_param()
+{
+    return PyModule_Create(&ParamModule);
+}
 #endif
 
 
@@ -749,6 +753,11 @@ asynPythonDriver::asynPythonDriver(const char *portName, const char *moduleName,
                      0/*priority*/, 
                      0/*stackSize*/), pModule(NULL), pFuncRead(NULL), pFuncReadEnum(NULL), pFuncWrite(NULL), pThreadState(NULL)
 {
+    /* Create extenion module */
+    #if PY_MAJOR_VERSION >= 3
+    PyImport_AppendInittab("param", &PyInit_param);
+    #endif
+
     /* Initialize Python and thread support */
     if (!Py_IsInitialized()) {
         Py_Initialize();
@@ -761,7 +770,7 @@ asynPythonDriver::asynPythonDriver(const char *portName, const char *moduleName,
 
     /* Create extenion module */
     #if PY_MAJOR_VERSION >= 3
-    PyObject *pParams = PyModule_Create(&ParamModule);
+    PyObject *pParams = PyImport_ImportModule("param");
     #else
     PyObject *pParams = Py_InitModule("param", ParamMethods);
     #endif
