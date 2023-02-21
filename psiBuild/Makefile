@@ -12,4 +12,8 @@ SCRIPTS += ../pythonApp/python/DBParser.py
 SCRIPTS += ../pythonApp/python/PythonDriver.py
 
 USR_INCLUDES = $(shell python3-config --includes)
-USR_LDFLAGS =  $(shell python3-config --ldflags)
+USR_LDFLAGS :=  $(shell python3-config --ldflags --embed)
+ifeq ($(firstword $(USR_LDFLAGS)),Usage:)
+  USR_LDFLAGS :=  $(shell python3-config --ldflags)
+endif
+
