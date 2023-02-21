@@ -12,4 +12,4 @@ SCRIPTS += ../pythonApp/python/DBParser.py
 SCRIPTS += ../pythonApp/python/PythonDriver.py
 
 USR_INCLUDES = $(shell python3-config --includes)
-USR_LDFLAGS =  $(shell python3-config --libs)
+USR_LDFLAGS =  $(shell python3-config --ldflags)

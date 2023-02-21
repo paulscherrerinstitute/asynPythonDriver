@@ -16,7 +16,7 @@ DBD += asynPythonDriver.dbd
 asynPythonDriver_SRCS += asynPythonDriver.cpp
 
 USR_INCLUDES = $(shell python3-config --includes)
-USR_LDFLAGS =  $(shell python3-config --libs)
+USR_LDFLAGS =  $(shell python3-config --ldflags)
 
 asynPythonDriver_LIBS += asyn
 asynPythonDriver_LIBS += $(EPICS_BASE_IOC_LIBS)
