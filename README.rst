@@ -96,4 +96,4 @@ Known Problems
 
 - For input records, ai, longin, stringin, the SCAN field can only be *I/O Intr*. That means these records have to be updated by the driver and then call ``self.update``.
 
-- Each asynPythonDriverConfigure creates a Python sub-interpreter, in order to isolate the modules. And watch out the `bug and caveats <https://docs.python.org/2/c-api/init.html#bugs-and-caveats>`_ about sub-interpreter.
+- The first call of asynPythonDriverConfigure creates the main Python interpreter, and subsequent calls create Python sub-interpreters, in order to isolate the modules. And watch out the `bug and caveats <https://docs.python.org/2/c-api/init.html#bugs-and-caveats>`_ about sub-interpreter.
