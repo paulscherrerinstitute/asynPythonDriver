@@ -753,19 +753,24 @@ asynPythonDriver::asynPythonDriver(const char *portName, const char *moduleName,
                      0/*priority*/, 
                      0/*stackSize*/), pModule(NULL), pFuncRead(NULL), pFuncReadEnum(NULL), pFuncWrite(NULL), pThreadState(NULL)
 {
-    /* Create extenion module */
-    #if PY_MAJOR_VERSION >= 3
-    PyImport_AppendInittab("param", &PyInit_param);
-    #endif
-
     /* Initialize Python and thread support */
     if (!Py_IsInitialized()) {
+        /* Create extenion module */
+        #if PY_MAJOR_VERSION >= 3
+        PyImport_AppendInittab("param", &PyInit_param);
+        #endif
         Py_Initialize();
         PyEval_InitThreads();
         this->pThreadState = PyThreadState_Get();
     } else {
-        PyEval_AcquireLock();
+        /* Restore main interpreter to acquire GIL */
+        PyEval_RestoreThread(PyInterpreterState_ThreadHead(PyInterpreterState_Main()));
+
+        /* Create a new subinterpreter */
         this->pThreadState = Py_NewInterpreter();
+
+        /* Swap in subinterpreter */
+        PyThreadState_Swap(this->pThreadState);
     }
 
     /* Create extenion module */
