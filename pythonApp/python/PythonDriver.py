@@ -64,7 +64,6 @@ class PythonDriverType(type):
                     records = parse_database(open(dbfullpath).read())
                     params = find_params(records)
                     for drvinfo, info in params.items():
-                        print(drvinfo, info)
                         param =  Param(drvinfo, DataType[info[1]])
                         setattr(cls, info[0], param)
 
