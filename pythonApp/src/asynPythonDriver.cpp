@@ -211,7 +211,7 @@ static PyObject *Py_setParam(PyObject *self, PyObject *args)
     char *name;
     int ivalue;
     double dvalue;
-    char *svalue;
+    const char *svalue;
     char error[256];
     asynStatus status;
     PyObject *pThis;
